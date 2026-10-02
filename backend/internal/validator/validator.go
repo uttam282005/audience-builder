@@ -41,9 +41,13 @@ func ValidatePreviewRequest(req *model.PreviewRequest) []model.FieldError {
 			parsed, err = time.Parse(time.RFC3339Nano, trimmedAsOf)
 		}
 		if err != nil {
+			// Also accept date-only ISO 8601 (YYYY-MM-DD)
+			parsed, err = time.Parse("2006-01-02", trimmedAsOf)
+		}
+		if err != nil {
 			errs = append(errs, model.FieldError{
 				Field: "asOf",
-				Issue: fmt.Sprintf("invalid timestamp format '%s', expected RFC 3339 (e.g. 2026-09-29T00:00:00.000Z)", trimmedAsOf),
+				Issue: fmt.Sprintf("invalid timestamp format '%s', expected RFC 3339 or ISO date (e.g. 2026-09-29T00:00:00.000Z or 2026-09-29)", trimmedAsOf),
 			})
 		} else {
 			req.ParsedAsOf = parsed.UTC()

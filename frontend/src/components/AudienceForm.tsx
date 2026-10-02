@@ -51,6 +51,20 @@ export const AudienceForm: React.FC<AudienceFormProps> = ({
   ]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isRawMode, setIsRawMode] = useState<boolean>(false);
+
+  const parseAsOf = (raw: string): { date: string; time: string } => {
+    if (!raw) return { date: '', time: '00:00:00' };
+    const parts = raw.split('T');
+    const date = parts[0] || '';
+    let time = '00:00:00';
+    if (parts[1]) {
+      time = parts[1].replace('Z', '').split('.')[0] || '00:00:00';
+    }
+    return { date, time };
+  };
+
+  const { date: datePart, time: timePart } = parseAsOf(asOf);
 
   const handleAddCondition = () => {
     const nextId = `c_${Date.now()}`;
@@ -180,18 +194,91 @@ export const AudienceForm: React.FC<AudienceFormProps> = ({
 
         {/* As of (UTC) */}
         <div className="field-group">
-          <label htmlFor="field-asOf" className="field-label">
-            As of (UTC)
-          </label>
-          <input
-            id="field-asOf"
-            type="text"
-            className={`field-input ${errors.asOf ? 'has-error' : ''}`}
-            value={asOf}
-            onChange={(e) => onAsOfChange(e.target.value)}
-            aria-invalid={!!errors.asOf}
-            aria-describedby={errors.asOf ? 'err-asOf' : undefined}
-          />
+          <div className="field-label-row">
+            <label htmlFor={isRawMode ? "field-asOf-raw" : "field-asOf-date"} className="field-label">
+              As of (UTC)
+            </label>
+            <div className="field-shortcuts">
+              <button
+                type="button"
+                className="btn-shortcut"
+                onClick={() => onAsOfChange('2026-09-29T00:00:00.000Z')}
+              >
+                Sample (29 Sep 2026)
+              </button>
+              <button
+                type="button"
+                className="btn-shortcut"
+                onClick={() => onAsOfChange(new Date().toISOString())}
+              >
+                Now
+              </button>
+              <button
+                type="button"
+                className="btn-shortcut"
+                style={{ color: 'var(--ink-muted)' }}
+                onClick={() => setIsRawMode(!isRawMode)}
+              >
+                {isRawMode ? 'Picker' : 'Raw ISO'}
+              </button>
+            </div>
+          </div>
+
+          {isRawMode ? (
+            <input
+              id="field-asOf-raw"
+              type="text"
+              className={`field-input field-input--numeric ${errors.asOf ? 'has-error' : ''}`}
+              value={asOf}
+              onChange={(e) => onAsOfChange(e.target.value)}
+              placeholder="2026-09-29T00:00:00.000Z"
+              aria-invalid={!!errors.asOf}
+              aria-describedby={errors.asOf ? 'err-asOf' : undefined}
+            />
+          ) : (
+            <>
+              <div className="asof-picker-grid">
+                <div>
+                  <input
+                    id="field-asOf-date"
+                    type="date"
+                    className={`field-input field-input--numeric ${errors.asOf ? 'has-error' : ''}`}
+                    value={datePart}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      if (newDate) {
+                        onAsOfChange(`${newDate}T${timePart || '00:00:00'}.000Z`);
+                      } else {
+                        onAsOfChange('');
+                      }
+                    }}
+                    aria-label="As of date (UTC)"
+                    aria-invalid={!!errors.asOf}
+                    aria-describedby={errors.asOf ? 'err-asOf' : undefined}
+                  />
+                </div>
+                <div>
+                  <input
+                    id="field-asOf-time"
+                    type="time"
+                    step="1"
+                    className={`field-input field-input--numeric ${errors.asOf ? 'has-error' : ''}`}
+                    value={timePart}
+                    onChange={(e) => {
+                      const newTime = e.target.value;
+                      const formattedTime = newTime.length === 5 ? `${newTime}:00` : newTime;
+                      onAsOfChange(`${datePart || '2026-09-29'}T${formattedTime || '00:00:00'}.000Z`);
+                    }}
+                    aria-label="As of time (UTC)"
+                  />
+                </div>
+              </div>
+              <div className="asof-preview-text" title={asOf}>
+                UTC timestamp: {asOf}
+              </div>
+            </>
+          )}
+
           {errors.asOf && (
             <div id="err-asOf" className="field-error-message">
               {errors.asOf}

@@ -136,9 +136,51 @@ body {
   margin-bottom: var(--space-4);
 }
 
-/* Form controls */
 .field-group {
   margin-bottom: var(--space-4);
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-1);
+}
+
+.field-shortcuts {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.btn-shortcut {
+  background: transparent;
+  border: none;
+  font: 400 12px/16px var(--font-ui);
+  color: var(--jade);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition);
+}
+
+.btn-shortcut:hover {
+  color: var(--jade-hover);
+}
+
+.asof-picker-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-2);
+}
+
+.asof-preview-text {
+  font: 400 12px/16px var(--font-mono);
+  color: var(--ink-faint);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .field-label {
