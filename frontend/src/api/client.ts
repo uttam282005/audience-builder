@@ -6,7 +6,12 @@ import {
 } from '../types/audience';
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? 'https://audience-builder-5fci.onrender.com'
+    : 'http://localhost:8080');
 
 export class ApiError extends Error {
   public status: number;

@@ -6,6 +6,15 @@ Built for the **Mable Software Engineering Intern Assignment**.
 
 ---
 
+## Live Deployments
+
+- **Frontend Application (Vercel)**: [https://audience-builder-two.vercel.app](https://audience-builder-two.vercel.app)
+- **Backend API (Render)**: [https://audience-builder-5fci.onrender.com](https://audience-builder-5fci.onrender.com)
+  - Health check: `https://audience-builder-5fci.onrender.com/health`
+  - Audience preview: `POST https://audience-builder-5fci.onrender.com/v1/audiences/preview`
+
+---
+
 ## Architecture Overview
 
 The system consists of two independently runnable applications:
