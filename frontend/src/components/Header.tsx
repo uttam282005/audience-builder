@@ -1,69 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { checkHealth, API_BASE_URL } from '../api/client';
-import { Database } from 'lucide-react';
+import React from 'react';
 
-export const Header: React.FC = () => {
-  const [isOnline, setIsOnline] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState<boolean>(true);
+interface HeaderProps {
+  asOf: string;
+}
 
-  const testConnection = async () => {
-    setChecking(true);
-    try {
-      await checkHealth();
-      setIsOnline(true);
-    } catch {
-      setIsOnline(false);
-    } finally {
-      setChecking(false);
-    }
-  };
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  useEffect(() => {
-    testConnection();
-    const interval = setInterval(testConnection, 30000); // Check every 30s
-    return () => clearInterval(interval);
-  }, []);
+export function formatAsOfDate(isoStr: string): string {
+  if (!isoStr) return '';
+  try {
+    const date = new Date(isoStr);
+    if (isNaN(date.getTime())) return isoStr;
+    return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  } catch {
+    return isoStr;
+  }
+}
+
+export const Header: React.FC<HeaderProps> = ({ asOf }) => {
+  const formattedDate = formatAsOfDate(asOf);
 
   return (
-    <header className="header" role="banner">
-      <div className="header-inner">
-        <div className="logo-area">
-          <div className="brand-badge" aria-hidden="true">Mable</div>
-          <div>
-            <h1 className="app-title">Audience Builder</h1>
-            <p className="app-subtitle">Behavioral cohort segmentation engine</p>
-          </div>
+    <header className="app-header" role="banner">
+      <div className="app-header-inner">
+        <div className="header-brand">
+          <span className="brand-title">Mable</span>{' '}
+          <span className="brand-subtitle">Audience Builder</span>
         </div>
-
-        <div className="header-status">
-          <Database size={15} className="text-muted" aria-hidden="true" />
-          <span>API: <code>{API_BASE_URL}</code></span>
-          <span
-            className={`status-dot ${
-              checking
-                ? ''
-                : isOnline
-                ? 'online'
-                : 'offline'
-            }`}
-            aria-hidden="true"
-          />
-          <span style={{ fontSize: '12px', fontWeight: 600 }}>
-            {checking
-              ? 'Checking...'
-              : isOnline
-              ? 'Connected'
-              : 'Backend Unreachable'}
-          </span>
-          <button
-            onClick={testConnection}
-            className="btn btn-secondary"
-            style={{ padding: '2px 8px', fontSize: '11px' }}
-            title="Check backend health"
-            aria-label="Refresh backend connection"
-          >
-            Check
-          </button>
+        <div className="header-asof">
+          As of <span className="header-asof-date">{formattedDate || asOf}</span>
         </div>
       </div>
     </header>

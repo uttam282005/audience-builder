@@ -59,13 +59,11 @@ export async function previewAudience(
       },
       body: JSON.stringify(request),
     });
-  } catch (err) {
+  } catch {
     throw new ApiError(
       0,
       'network_error',
-      err instanceof Error
-        ? `Network connection error: ${err.message}. Is the backend running on ${API_BASE_URL}?`
-        : 'Network connection failed'
+      `Can't reach the server at ${API_BASE_URL}.`
     );
   }
 

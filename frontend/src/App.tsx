@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { AudienceForm } from './components/AudienceForm';
 import { AudienceResults } from './components/AudienceResults';
-import { ErrorAlert } from './components/ErrorAlert';
 import { PreviewRequest, PreviewResponse } from './types/audience';
 import { previewAudience, ApiError } from './api/client';
 
 export const App: React.FC = () => {
+  const [asOf, setAsOf] = useState<string>('2026-09-29T00:00:00.000Z');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<PreviewResponse | null>(null);
   const [error, setError] = useState<{
@@ -47,15 +47,25 @@ export const App: React.FC = () => {
 
   return (
     <div>
-      <Header />
+      <Header asOf={asOf} />
 
-      <main className="container">
-        {error && <ErrorAlert error={error} onRetry={handleRetry} />}
-
-        <div className="main-grid">
-          <AudienceForm onSubmit={executePreview} isLoading={isLoading} />
-          <AudienceResults result={result} isLoading={isLoading} />
+      <main className="app-layout">
+        <div className="pane-form">
+          <AudienceForm
+            asOf={asOf}
+            onAsOfChange={setAsOf}
+            onSubmit={executePreview}
+            isLoading={isLoading}
+          />
         </div>
+
+        <AudienceResults
+          result={result}
+          error={error}
+          lastConditions={lastRequest?.conditions}
+          onRetry={handleRetry}
+          isLoading={isLoading}
+        />
       </main>
     </div>
   );

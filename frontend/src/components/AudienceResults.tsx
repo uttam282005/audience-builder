@@ -1,172 +1,126 @@
-import React, { useState } from 'react';
-import { PreviewResponse, EVENT_TYPE_LABELS } from '../types/audience';
-import { Users, Search, CheckCircle, HelpCircle, Layers } from 'lucide-react';
+import React from 'react';
+import { PreviewResponse, ConditionPayload } from '../types/audience';
+import { formatAsOfDate } from './Header';
 
 interface AudienceResultsProps {
   result: PreviewResponse | null;
+  error: {
+    message: string;
+    details?: { field: string; issue: string }[];
+  } | null;
+  lastConditions?: ConditionPayload[];
+  onRetry: () => void;
   isLoading: boolean;
 }
 
 export const AudienceResults: React.FC<AudienceResultsProps> = ({
   result,
+  error,
+  lastConditions,
+  onRetry,
   isLoading,
 }) => {
-  const [filterText, setFilterText] = useState<string>('');
-
-  if (isLoading) {
-    return (
-      <section
-        className="results-card"
-        aria-labelledby="results-heading"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <div className="card-header">
-          <div>
-            <h2 id="results-heading" className="card-title">Audience Preview</h2>
-            <p className="card-desc">Querying SQLite database...</p>
-          </div>
-        </div>
-        <div className="state-container">
-          <div className="spinner" aria-hidden="true" />
-          <h3 className="state-title">Evaluating Conditions</h3>
-          <p className="state-desc">
-            Executing dynamic CTE aggregation across anonymous event history.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  if (!result) {
-    return (
-      <section className="results-card" aria-labelledby="results-heading">
-        <div className="card-header">
-          <div>
-            <h2 id="results-heading" className="card-title">Audience Preview</h2>
-            <p className="card-desc">Ready to evaluate</p>
-          </div>
-        </div>
-        <div className="state-container">
-          <Layers size={48} className="state-icon" aria-hidden="true" />
-          <h3 className="state-title">No Audience Evaluated Yet</h3>
-          <p className="state-desc">
-            Configure your rule conditions on the left and click &quot;Preview Audience&quot; to inspect qualified anonymous members.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  const filteredMembers = result.members.filter((m) =>
-    m.anonymousId.toLowerCase().includes(filterText.toLowerCase())
-  );
-
   return (
     <section
-      className="results-card"
+      className={`pane-results ${isLoading ? 'loading' : ''}`}
       aria-labelledby="results-heading"
       aria-live="polite"
     >
-      <div className="card-header">
-        <div>
-          <h2 id="results-heading" className="card-title">Audience Preview</h2>
-          <p className="card-desc">
-            Rule: <strong>{result.name}</strong>
-          </p>
-        </div>
-      </div>
+      <h2 id="results-heading" className="section-heading">
+        Results
+      </h2>
 
-      {/* Summary Metric Banner */}
-      <div className="audience-summary-banner">
-        <div>
-          <div className="summary-metric">
-            <span className="metric-number">{result.total}</span>
-            <span className="metric-label">
-              {result.total === 1 ? 'Matched User' : 'Matched Users'}
-            </span>
-          </div>
-          <div className="metric-timestamp">
-            Evaluated relative to: <code>{result.asOf}</code>
-          </div>
+      {/* Server / Network Error State */}
+      {error && (
+        <div className="server-error-banner" role="alert">
+          <div className="server-error-message">{error.message}</div>
+          <button type="button" className="btn-primary" onClick={onRetry}>
+            Retry
+          </button>
         </div>
-        <Users size={32} color="#2563eb" aria-hidden="true" />
-      </div>
+      )}
 
-      {/* Zero match empty state */}
-      {result.total === 0 ? (
-        <div className="state-container" style={{ padding: '36px 16px' }}>
-          <HelpCircle size={40} className="state-icon" aria-hidden="true" />
-          <h3 className="state-title">Zero Matches</h3>
-          <p className="state-desc">
-            No anonymous users met all specified criteria within their respective lookback windows. Try adjusting your count thresholds or widening the lookback window.
-          </p>
+      {/* Pre-flight resting state (no result yet, no error) */}
+      {!error && !result && (
+        <div className="results-resting">
+          Configure conditions and select Preview audience.
         </div>
-      ) : (
+      )}
+
+      {/* Result loaded */}
+      {!error && result && (
         <>
-          {/* Member Search / Filter Bar if > 3 members */}
-          {result.members.length > 3 && (
-            <div style={{ marginBottom: '14px', position: 'relative' }}>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Filter by anonymous ID..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                style={{ paddingLeft: '32px', fontSize: '13px' }}
-                aria-label="Filter matching members by anonymous ID"
-              />
-              <Search
-                size={15}
-                color="#94a3b8"
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                }}
-                aria-hidden="true"
-              />
+          <div className="results-header">
+            <div className="result-count">{result.total}</div>
+            <div className="result-count-label">
+              users match this definition as of {formatAsOfDate(result.asOf)}
+            </div>
+          </div>
+
+          {result.total === 0 ? (
+            <div className="results-empty">
+              <div className="empty-headline">
+                No users match this definition as of {formatAsOfDate(result.asOf)}.
+              </div>
+              <div className="empty-guidance">
+                Try lowering a count or widening a window.
+              </div>
+            </div>
+          ) : (
+            <div className="results-table-container">
+              <div className="results-meta">
+                Showing all {result.total}
+              </div>
+
+              <table className="results-table">
+                <thead>
+                  <tr>
+                    <th scope="col" style={{ width: '220px' }}>
+                      Anonymous ID
+                    </th>
+                    <th scope="col">Why they match</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.members.map((member, rowIndex) => (
+                    <tr
+                      key={member.anonymousId}
+                      style={
+                        {
+                          '--row-index': Math.min(rowIndex, 12),
+                        } as React.CSSProperties
+                      }
+                    >
+                      <td className="anon-id">{member.anonymousId}</td>
+                      <td>
+                        <div className="evidence-list">
+                          {member.evidence.map((ev, evIdx) => {
+                            const matchingCond = lastConditions?.[evIdx];
+                            const opLabel =
+                              matchingCond?.operator === 'exactly'
+                                ? 'exactly'
+                                : 'at least';
+                            const targetCount = matchingCond?.count ?? 0;
+                            const targetDays = matchingCond?.withinDays ?? 7;
+
+                            return (
+                              <div key={evIdx} className="evidence-item">
+                                {ev.eventType} —{' '}
+                                <span className="observed">{ev.observedCount}</span>{' '}
+                                observed ({opLabel}{' '}
+                                <span className="threshold">{targetCount}</span> in{' '}
+                                <span className="threshold">{targetDays}</span> days)
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-
-          {/* Members Evidence List */}
-          <div className="members-list" role="list" aria-label="Matched Anonymous Members">
-            {filteredMembers.map((member) => (
-              <div key={member.anonymousId} className="member-item" role="listitem">
-                <div className="member-top">
-                  <span className="member-id">{member.anonymousId}</span>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      color: '#16a34a',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <CheckCircle size={13} aria-hidden="true" /> Qualified
-                  </span>
-                </div>
-
-                <div className="member-evidence" aria-label="Evidence breakdown">
-                  {member.evidence.map((ev, idx) => (
-                    <span key={idx} className="evidence-pill">
-                      <span>{EVENT_TYPE_LABELS[ev.eventType] || ev.eventType}:</span>
-                      <span className="evidence-count">{ev.observedCount}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {filteredMembers.length === 0 && filterText && (
-              <p style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', padding: '20px' }}>
-                No members match &quot;{filterText}&quot;
-              </p>
-            )}
-          </div>
         </>
       )}
     </section>
